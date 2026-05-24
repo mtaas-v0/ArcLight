@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <vector>
 #include <cstdarg>
+#include <array>
 
 #include "nnml.h"
 #include "ops.h"

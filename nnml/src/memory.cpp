@@ -12,7 +12,6 @@
 #include <assert.h>
 
 #if defined(__linux__)
-  #define NNML_HAS_LIBNUMA 1
   #include <unistd.h>
   #include <sys/mman.h>
   #include <errno.h>
@@ -21,10 +20,17 @@
   #include <cstring>
   #include <atomic>
   #include <malloc.h>
-  #ifdef NNML_HAS_LIBNUMA
+  #if defined(NNML_HAS_NUMA) && !defined(NNML_NO_NUMA)
+    #define NNML_HAS_LIBNUMA 1
     #include <numa.h>
   #endif
 #elif defined(_WIN32)
+  #ifndef NOMINMAX
+  #define NOMINMAX
+  #endif
+  #ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+  #endif
   #include <windows.h>
   #include <malloc.h>
 #else
@@ -47,7 +53,6 @@ NNML_API nnml_numa_info query_numa_info() {
         info.node_count = 1;
     }
 #else
-    NNML_UNUSED(numa_mode);
     info.available = false;
     info.node_count = 1;
 #endif
@@ -101,8 +106,8 @@ inline void* numa_alloc_on_node(std::size_t size, int node) {
     if (!numa_is_available()) return nullptr;
     return ::numa_alloc_onnode(size, node);
 #else
-    NNML_USED(size);
-    NNML_USED(node);
+    NNML_UNUSED(size);
+    NNML_UNUSED(node);
     return nullptr;
 #endif
 }
@@ -111,8 +116,8 @@ inline void numa_free_on_node(void* p, std::size_t size) {
 #if defined(__linux__) && defined(NNML_HAS_LIBNUMA)
     ::numa_free(p, size);
 #else
-    NNML_USED(p);
-    NNML_USED(size);
+    NNML_UNUSED(p);
+    NNML_UNUSED(size);
 #endif
 }
 
@@ -423,8 +428,8 @@ nnml_memory_t nnml_memory::create(const cparams& params) {
     std::size_t tmp_work_size = params.tmp_work_size_bytes / nodes;
     
     for (unsigned i = 0; i < nodes; ++i) {
-        unsigned alloc_node = want_numa ? i : (mem->numa_info_.available ? local_node_id : -1);
-        printf("Allocating buffer on node: %u\n", alloc_node);
+        int alloc_node = want_numa ? static_cast<int>(i) : (mem->numa_info_.available ? local_node_id : -1);
+        printf("Allocating buffer on node: %d\n", alloc_node);
         nnml_buffer* wbuf = new nnml_buffer(wsize, params.zero_init, alloc_node,
                          NNML_BUFFER_USAGE_WEIGHTS, params.alignment);
         nnml_buffer* cbuf = new nnml_buffer(csize, params.zero_init, alloc_node,

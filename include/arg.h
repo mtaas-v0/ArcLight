@@ -16,14 +16,62 @@
 #include <vector>
 #include <stdio.h>
 
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 #include "nnml.h"
 #include "ops.h"
 
 
 #define GB  * 1024 * 1024 * 1024
 
+#if defined(_WIN32)
+inline void win32_use_utf8_console() {
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+}
+
+inline std::string win32_wide_to_utf8(const wchar_t * text) {
+    if (text == nullptr) return {};
+
+    int size = WideCharToMultiByte(CP_UTF8, 0, text, -1, nullptr, 0, nullptr, nullptr);
+    if (size <= 0) return {};
+
+    std::string out(static_cast<size_t>(size), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, text, -1, out.data(), size, nullptr, nullptr);
+    if (!out.empty() && out.back() == '\0') out.pop_back();
+    return out;
+}
+
+inline std::vector<std::string> win32_command_line_args_utf8() {
+    int argc = 0;
+    LPWSTR * wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    if (wargv == nullptr) return {};
+
+    std::vector<std::string> argv;
+    argv.reserve(static_cast<size_t>(argc));
+    for (int i = 0; i < argc; ++i) {
+        argv.push_back(win32_wide_to_utf8(wargv[i]));
+    }
+
+    LocalFree(wargv);
+    return argv;
+}
+#endif
+
 
 void print_logo() {
+#if defined(_WIN32)
+    win32_use_utf8_console();
+#endif
     printf("\n");
     printf("    ⚡  .-^-.        .-^-.        .-^-.    ⚡  .-^-.        .-^-.⚡\n");
     printf("       /     \\      /     \\ ⚡   /     \\      /     \\      /     \\\n");
@@ -42,6 +90,7 @@ void print_logo() {
     printf("\n");
     printf("                    ✦  ✦  ✦  ArcLight Team  ✦  ✦  ✦\n");
     printf("\n");
+    fflush(stdout);
 }
 
 
@@ -143,6 +192,25 @@ public:
     }
 
     void parse(int32_t argc, char** argv) {
+#if defined(_WIN32)
+        win32_use_utf8_console();
+
+        std::vector<std::string> utf8_args = win32_command_line_args_utf8();
+        if (!utf8_args.empty()) {
+            std::vector<char *> utf8_argv;
+            utf8_argv.reserve(utf8_args.size());
+            for (std::string & arg : utf8_args) {
+                utf8_argv.push_back(arg.data());
+            }
+            parse_impl(static_cast<int32_t>(utf8_argv.size()), utf8_argv.data());
+            return;
+        }
+#endif
+        parse_impl(argc, argv);
+    }
+
+private:
+    void parse_impl(int32_t argc, char** argv) {
         for(int32_t i = 1;i < argc; ++i) {
             std::string key = argv[i];
             if(key.rfind("--", 0) != 0)

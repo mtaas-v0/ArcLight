@@ -3,131 +3,77 @@
 #include "ops.h"
 #include "tensor.h"
 
-nnml_type_traits place_holder = {
-    .type_name                = nullptr,
-    .blck_size                = -1,
-    .blck_size_interleave     = -1,
-    .type_size                = 0,
-    .is_quantized             = false,
-    .to_float                 = nullptr,
-    .from_float_ref           = nullptr,
-    .from_float_cpu           = nullptr,
-    .vec_dot                  = nullptr,
-    .vec_dot_type             = NNML_TYPE_COUNT,
-    .nrows                    = -1,
-};
+static nnml_type_traits make_type_traits(
+    const char *      type_name            = nullptr,
+    int64_t           blck_size            = -1,
+    int64_t           blck_size_interleave = -1,
+    size_t            type_size            = 0,
+    bool              is_quantized         = false,
+    nnml_to_float_t   to_float             = nullptr,
+    nnml_from_float_t from_float_ref       = nullptr,
+    nnml_from_float_t from_float_cpu       = nullptr,
+    nnml_vec_dot_t    vec_dot              = nullptr,
+    nnml_type         vec_dot_type         = NNML_TYPE_COUNT,
+    int64_t           nrows                = -1) {
+    nnml_type_traits traits{};
+    traits.type_name            = type_name;
+    traits.blck_size            = blck_size;
+    traits.blck_size_interleave = blck_size_interleave;
+    traits.type_size            = type_size;
+    traits.is_quantized         = is_quantized;
+    traits.to_float             = to_float;
+    traits.from_float_ref       = from_float_ref;
+    traits.from_float_cpu       = from_float_cpu;
+    traits.vec_dot              = vec_dot;
+    traits.vec_dot_type         = vec_dot_type;
+    traits.nrows                = nrows;
+    return traits;
+}
+
+nnml_type_traits place_holder = make_type_traits();
 
 const nnml_type_traits type_traits[NNML_TYPE_COUNT] = {
-    [NNML_TYPE_F32] = {
-        .type_name                = "f32",
-        .blck_size                = 1,
-        .type_size                = sizeof(float),
-        .is_quantized             = false,
-        .from_float_cpu           = (nnml_from_float_t) nnml_cpu_fp32_to_fp32,
-        .vec_dot                  = (nnml_vec_dot_t) nnml_vec_dot_f32,
-        .vec_dot_type             = NNML_TYPE_F32,
-        .nrows                    = 1,
-    },
-    [NNML_TYPE_F16] = {
-        .type_name                = "f16",
-        .blck_size                = 1,
-        .type_size                = sizeof(nnml_fp16_t),
-        .is_quantized             = false,
-        .to_float                 = (nnml_to_float_t) nnml_fp16_to_fp32_row,
-        .from_float_ref           = (nnml_from_float_t) nnml_fp32_to_fp16_row,
-        .from_float_cpu           = (nnml_from_float_t) nnml_cpu_fp32_to_fp16,
-        .vec_dot                  = (nnml_vec_dot_t) nnml_vec_dot_f16,
-        .vec_dot_type             = NNML_TYPE_F16,
-        .nrows                    = 1,
-    },
-    [NNML_TYPE_Q4_0] = {
-        .type_name                = "q4_0",
-        .blck_size                = QK4_0,
-        .type_size                = sizeof(block_q4_0),
-        .is_quantized             = true,
-        .to_float                 = (nnml_to_float_t) dequantize_row_q4_0,
-        .from_float_ref           = (nnml_from_float_t) quantize_row_q4_0_ref,
-        .from_float_cpu           = quantize_row_q4_0,
-        .vec_dot                  = nnml_vec_dot_q4_0_q8_0,
-        .vec_dot_type             = NNML_TYPE_Q8_0,
+    make_type_traits("f32", 1, -1, sizeof(float), false, nullptr, nullptr, (nnml_from_float_t) nnml_cpu_fp32_to_fp32, (nnml_vec_dot_t) nnml_vec_dot_f32, NNML_TYPE_F32, 1),
+    make_type_traits("f16", 1, -1, sizeof(nnml_fp16_t), false, (nnml_to_float_t) nnml_fp16_to_fp32_row, (nnml_from_float_t) nnml_fp32_to_fp16_row, (nnml_from_float_t) nnml_cpu_fp32_to_fp16, (nnml_vec_dot_t) nnml_vec_dot_f16, NNML_TYPE_F16, 1),
+    make_type_traits("q4_0", QK4_0, -1, sizeof(block_q4_0), true, (nnml_to_float_t) dequantize_row_q4_0, (nnml_from_float_t) quantize_row_q4_0_ref, quantize_row_q4_0, nnml_vec_dot_q4_0_q8_0, NNML_TYPE_Q8_0,
 #if defined (__ARM_FEATURE_MATMUL_INT8)
-        .nrows                    = 2,
+        2
 #else
-        .nrows                    = 1,
+        1
 #endif
-    },
-    [NNML_TYPE_PH_3] = place_holder,
-    [NNML_TYPE_PH_4] = place_holder,
-    [NNML_TYPE_PH_5] = place_holder,
-    [NNML_TYPE_PH_6] = place_holder,
-    [NNML_TYPE_PH_7] = place_holder,
-    [NNML_TYPE_Q8_0] = {
-        .type_name                = "q8_0",
-        .blck_size                = QK8_0,
-        .type_size                = sizeof(block_q8_0),
-        .is_quantized             = true,
-        .to_float                 = (nnml_to_float_t) dequantize_row_q8_0,
-        .from_float_ref           = (nnml_from_float_t) quantize_row_q8_0_ref,
-        .from_float_cpu           = quantize_row_q8_0,
-        .vec_dot                  = nnml_vec_dot_q8_0_q8_0,
-        .vec_dot_type             = NNML_TYPE_Q8_0,
+    ),
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    make_type_traits("q8_0", QK8_0, -1, sizeof(block_q8_0), true, (nnml_to_float_t) dequantize_row_q8_0, (nnml_from_float_t) quantize_row_q8_0_ref, quantize_row_q8_0, nnml_vec_dot_q8_0_q8_0, NNML_TYPE_Q8_0,
 #if defined (__ARM_FEATURE_MATMUL_INT8)
-        .nrows                    = 2,
+        2
 #else
-        .nrows                    = 1,
+        1
 #endif
-    },
-    [NNML_TYPE_PH_9] = place_holder,
-    [NNML_TYPE_PH_10] = place_holder,
-    [NNML_TYPE_PH_11] = place_holder,
-    [NNML_TYPE_PH_12] = place_holder,
-    [NNML_TYPE_PH_13] = place_holder,
-    [NNML_TYPE_Q6_K] = {
-        .type_name                = "q6_K",
-        .blck_size                = QK_K,
-        .type_size                = sizeof(block_q6_K),
-        .is_quantized             = true,
-        .to_float                 = (nnml_to_float_t) dequantize_row_q6_K,
-        .from_float_ref           = (nnml_from_float_t) quantize_row_q6_K_ref,
-        .vec_dot                  = nnml_vec_dot_q6_K_q8_K,
-        .vec_dot_type             = NNML_TYPE_Q8_K,
-        .nrows                    = 1,
-    },
-    [NNML_TYPE_Q8_K] = {
-        .type_name                = "q8_K",
-        .blck_size                = QK_K,
-        .type_size                = sizeof(block_q8_K),
-        .is_quantized             = true,
-        .from_float_cpu           = quantize_row_q8_K,
-    },
-    [NNML_TYPE_PH_16] = place_holder,
-    [NNML_TYPE_PH_17] = place_holder,
-    [NNML_TYPE_PH_18] = place_holder,
-    [NNML_TYPE_PH_19] = place_holder,
-    [NNML_TYPE_PH_20] = place_holder,
-    [NNML_TYPE_PH_21] = place_holder,
-    [NNML_TYPE_PH_22] = place_holder,
-    [NNML_TYPE_PH_23] = place_holder,
-    [NNML_TYPE_PH_24] = place_holder,
-    [NNML_TYPE_PH_25] = place_holder,
-    [NNML_TYPE_I32] = {
-        .type_name                = "i32",
-        .blck_size                = 1,
-        .type_size                = sizeof(int32_t),
-        .is_quantized             = false,
-    },
-    [NNML_TYPE_I64] = {
-        .type_name                = "i64",
-        .blck_size                = 1,
-        .type_size                = sizeof(int64_t),
-        .is_quantized             = false,
-    },
-    [NNML_TYPE_F64] = {
-        .type_name                = "f64",
-        .blck_size                = 1,
-        .type_size                = sizeof(double),
-        .is_quantized             = false,
-    },
+    ),
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    make_type_traits("q6_K", QK_K, -1, sizeof(block_q6_K), true, (nnml_to_float_t) dequantize_row_q6_K, (nnml_from_float_t) quantize_row_q6_K_ref, nullptr, nnml_vec_dot_q6_K_q8_K, NNML_TYPE_Q8_K, 1),
+    make_type_traits("q8_K", QK_K, -1, sizeof(block_q8_K), true, nullptr, nullptr, quantize_row_q8_K),
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    place_holder,
+    make_type_traits("i32", 1, -1, sizeof(int32_t)),
+    make_type_traits("i64", 1, -1, sizeof(int64_t)),
+    make_type_traits("f64", 1, -1, sizeof(double)),
 };
 
 static block_q4_0x4 make_block_q4_0x4(block_q4_0 * in, unsigned int blck_size_interleave) {
@@ -165,7 +111,31 @@ static block_q4_0x4 make_block_q4_0x4(block_q4_0 * in, unsigned int blck_size_in
     return out;
 }
 
-static int repack_q4_0_to_q4_0_4_bl(struct nnml_tensor * t, int interleave_block, const void * NNML_RESTRICT data, size_t data_size) {
+static block_q4_0x8 make_block_q4_0x8(block_q4_0 * in, unsigned int blck_size_interleave) {
+    block_q4_0x8 out;
+
+    for (int i = 0; i < 8; i++) {
+        out.d[i] = in[i].d;
+    }
+
+    const int end = QK4_0 * 4 / blck_size_interleave;
+    const uint64_t xor_mask = 0x8888888888888888ULL;
+
+    for (int i = 0; i < end; ++i) {
+        int src_id = i % 8;
+        int src_offset = (i / 8) * blck_size_interleave;
+        int dst_offset = i * blck_size_interleave;
+
+        uint64_t elems;
+        memcpy(&elems, &in[src_id].qs[src_offset], sizeof(uint64_t));
+        elems ^= xor_mask;
+        memcpy(&out.qs[dst_offset], &elems, sizeof(uint64_t));
+    }
+
+    return out;
+}
+
+static int repack_q4_0_to_q4_0_4_bl(nnml_tensor * t, int interleave_block, const void * NNML_RESTRICT data, size_t data_size) {
     NNML_ASSERT(t->get_data_type() == NNML_TYPE_Q4_0);
     NNML_ASSERT(interleave_block == 4 || interleave_block == 8);
     constexpr int nrows_interleaved = 4;
@@ -196,6 +166,37 @@ static int repack_q4_0_to_q4_0_4_bl(struct nnml_tensor * t, int interleave_block
     NNML_UNUSED(data_size);
 }
 
+static int repack_q4_0_to_q4_0_8_bl(nnml_tensor * t, int interleave_block, const void * NNML_RESTRICT data, size_t data_size) {
+    NNML_ASSERT(t->get_data_type() == NNML_TYPE_Q4_0);
+    NNML_ASSERT(interleave_block == 8);
+    constexpr int nrows_interleaved = 8;
+
+    block_q4_0x8 * dst = (block_q4_0x8*)t->tensor_data();
+    const block_q4_0 * src = (const block_q4_0*) data;
+    block_q4_0 dst_tmp[8];
+    int nrow = t->n_rows();
+    int nblocks = t->get_elements(0) / QK4_0;
+
+    NNML_ASSERT(data_size == nrow * nblocks * sizeof(block_q4_0));
+
+    if (t->get_elements(1) % nrows_interleaved != 0 || t->get_elements(0) % 8 != 0) {
+        return -1;
+    }
+
+    for (int b = 0; b < nrow; b += nrows_interleaved) {
+        for (int64_t x = 0; x < nblocks; x++) {
+            for (int i  = 0; i < nrows_interleaved; i++ ) {
+                dst_tmp[i] = src[x + i * nblocks];
+            }
+            *dst++ = make_block_q4_0x8(dst_tmp, interleave_block);
+        }
+        src += nrows_interleaved * nblocks;
+    }
+    return 0;
+
+    NNML_UNUSED(data_size);
+}
+
 template <> int repack<block_q4_0, 4, 4>(nnml_tensor * t, const void * data, size_t data_size) {
     return repack_q4_0_to_q4_0_4_bl(t, 4, data, data_size);
 }
@@ -205,8 +206,8 @@ template <> int repack<block_q4_0, 8, 4>(nnml_tensor * t, const void * data, siz
 }
 
 template <> int repack<block_q4_0, 8, 8>(nnml_tensor * t, const void * data, size_t data_size) {
-    // return repack_q4_0_to_q4_0_8_bl(t, 8, data, data_size);
-    abort(); // to be implemented
+    return repack_q4_0_to_q4_0_8_bl(t, 8, data, data_size);
+    // abort(); // to be implemented
 }
 
 int format_repack(nnml_tensor * weight_tensor) {

@@ -7,12 +7,15 @@
 #include <stdexcept>
 #include <stdint.h>
 #include <stdbool.h>
-#include <sched.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <memory>
+
+#if !defined(_WIN32)
+#include <sched.h>
+#endif
 
 
 // universal macros
@@ -898,6 +901,13 @@ typedef struct {
     uint8_t  qs[QK_K/2];
 } block_iq4_xs;
 static_assert(sizeof(block_iq4_xs) == sizeof(nnml_half) + sizeof(uint16_t) + QK_K/64 + QK_K/2, "wrong iq4_xs block size/padding");
+
+struct block_iq4_nlx8 {
+    nnml_half d[8];            // deltas for 8 iq4_nl blocks
+    uint8_t   qs[QK4_NL * 4];  // nibbles / quants for 8 iq4_nl blocks
+};
+static_assert(sizeof(block_iq4_nlx8) == 8 * sizeof(nnml_half) + QK4_NL * 4, "wrong iq4_nlx8 block size/padding");
+
 
 #endif // NNML_COMMON_DECL
 #endif // NNML_COMMON_DECL

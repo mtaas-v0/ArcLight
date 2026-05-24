@@ -121,9 +121,8 @@ void nnml_compute_node(nnml_tensor * node, const nnml_compute_state * params) {
 
 void nnml_single_graph_compute_thread(void * data) {
     nnml_compute_state * state = (nnml_compute_state *) data;
-    
-    for (int node_n = 0; node_n < single_graph->get_n_nodes();) {
 
+    for (int node_n = 0; node_n < single_graph->get_n_nodes();) {
         nnml_tensor * node = single_graph->get_nth_cnode(node_n)->tensor;
 
         if (node->get_operation() == NNML_OP_SCATTER_PRE || node->get_operation() == NNML_OP_GATHER) {
@@ -152,7 +151,7 @@ void nnml_scheduler::init(nnml_threadpool * tp, std::vector<nnml_cgraph *> & gra
     for (int i = 0; i < tp->total_groups; i++) {
         nnml_threadgroup * group = tp->get_group(i);
         NNML_ASSERT(group);
-        NNML_ASSERT(group->work_fn == nnml_single_graph_compute_thread);
+        NNML_ASSERT(group->work_fn != nullptr);
     }
     threadpool = tp;
 

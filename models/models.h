@@ -10,10 +10,7 @@
 // model definers should register their model hparam map as follows: (put this line in your xxx.cpp file)
 // REGISTER_HPARAMS_MAP(xxx, params_map);
 #define REGISTER_HPARAMS_MAP(key, map)     static bool _unused_hp_##key = (get_hparams_map()[#key] = map, true)
-inline std::map<std::string, std::map<std::string, llm_hparams_item>> & get_hparams_map() {
-    static std::map<std::string, std::map<std::string, llm_hparams_item>> hparams_maps;
-    return hparams_maps;
-}
+std::map<std::string, std::map<std::string, llm_hparams_item>> & get_hparams_map();
 // query
 inline std::map<std::string, llm_hparams_item> & get_model_hparams_map(const std::string & model_name) {
     if (get_hparams_map().count(model_name)) return get_hparams_map()[model_name];
@@ -25,10 +22,7 @@ inline std::map<std::string, llm_hparams_item> & get_model_hparams_map(const std
 // model definers should register their model weights map as follows: (put this line in your xxx.cpp file)
 // REGISTER_WEIGHTS_MAP(xxx, weights_map);
 #define REGISTER_WEIGHTS_MAP(key, map)     static bool _unused_wt_##key = (get_weights_map()[#key] = map, true)
-inline std::map<std::string, std::map<std::string, llm_weight_item>> & get_weights_map() {
-    static std::map<std::string, std::map<std::string, llm_weight_item>> weights_maps;
-    return weights_maps;
-}
+std::map<std::string, std::map<std::string, llm_weight_item>> & get_weights_map();
 // query
 inline std::map<std::string, llm_weight_item> & get_model_weights_map(const std::string & model_name) {
     if (get_weights_map().count(model_name)) return get_weights_map()[model_name];
@@ -47,34 +41,13 @@ inline std::map<std::string, llm_weight_item> & get_model_weights_map(const std:
 #define REGISTER_ATTN_FACTOR(key, value)   static bool _unused_af_##key = (get_attn_factor()[#key] = value, true)
 #define REGISTER_BETA_FAST(key, value)     static bool _unused_bf_##key = (get_beta_fast()[#key] = value, true)
 #define REGISTER_BETA_SLOW(key, value)     static bool _unused_bs_##key = (get_beta_slow()[#key] = value, true)
-inline std::map<std::string, llm_rope_type>& get_rope_type() {
-    static std::map<std::string, llm_rope_type> rope_types;
-    return rope_types;
-}
-inline std::map<std::string, float>& get_freq_scale() {
-    static std::map<std::string, float> freq_scales;
-    return freq_scales;
-}
-inline std::map<std::string, float>& get_freq_base() {
-    static std::map<std::string, float> freq_bases;
-    return freq_bases;
-}
-inline std::map<std::string, float>& get_ext_factor() {
-    static std::map<std::string, float> ext_factors;
-    return ext_factors;
-}
-inline std::map<std::string, float>& get_attn_factor() {
-    static std::map<std::string, float> attn_factors;
-    return attn_factors;
-}
-inline std::map<std::string, float>& get_beta_fast() {
-    static std::map<std::string, float> beta_fasts;
-    return beta_fasts;
-}
-inline std::map<std::string, float>& get_beta_slow() {
-    static std::map<std::string, float> beta_slows;
-    return beta_slows;
-}
+std::map<std::string, llm_rope_type>& get_rope_type();
+std::map<std::string, float>& get_freq_scale();
+std::map<std::string, float>& get_freq_base();
+std::map<std::string, float>& get_ext_factor();
+std::map<std::string, float>& get_attn_factor();
+std::map<std::string, float>& get_beta_fast();
+std::map<std::string, float>& get_beta_slow();
 // query
 inline llm_rope_type get_model_rope_type(const std::string & model_name) 
     { return get_rope_type().count(model_name) ? get_rope_type()[model_name] : llm_rope_type::LLM_ROPE_TYPE_NONE; }
@@ -96,11 +69,8 @@ inline float get_model_beta_slow(const std::string & model_name)
 // model definers should register their model's template caller as follows: (put this line in your xxx.cpp file)
 // REGISTER_TEMPLATE_CALLER(xxx, xxx_apply_template);
 using template_caller = std::function<std::string(const std::vector<chat_msg> & messages, bool add_generation_prompt, bool enable_reasoning)>;
-#define REGISTER_TEMPLATE_CALLER(key, func) static bool _unused_tc_##name = (get_template_callers()[#key] = func, true)
-inline std::map<std::string, template_caller> & get_template_callers() {
-    static std::map<std::string, template_caller> template_callers;
-    return template_callers;
-}
+#define REGISTER_TEMPLATE_CALLER(key, func) static bool _unused_tc_##key = (get_template_callers()[#key] = func, true)
+std::map<std::string, template_caller> & get_template_callers();
 // call
 inline std::string apply_template(const std::string & model_name, const std::vector<chat_msg> & messages, bool add_generation_prompt, bool enable_reasoning) {
     if (get_template_callers().count(model_name)) {

@@ -21,6 +21,7 @@
 
 #define GROUP_MAX_EPS 1e-15f
 
+#define UNUSED NNML_UNUSED
 
 // used to copy the number of elements and stride in bytes of tensors into local variables.
 // main purpose is to reduce code duplication and improve readability.
@@ -358,11 +359,14 @@ void nnml_vec_swiglu_f16(const int n, nnml_fp16_t * y, const nnml_fp16_t * x, co
 
 
 // vector functions declarations
-inline static void nnml_vec_cpy_f32 (const int n, float * y, const float * x)               { for (int i = 0; i < n; ++i) y[i]  = x[i]; }
+inline static void nnml_vec_cpy_f32 (const int n, float * y, const float * x)               { for (int i = 0; i < n; ++i) y[i]  = x[i];
+// for (int i = 0; i < 16; ++i) printf("%.4f ", y[i]);
+// printf("\n");
+}
 inline static void nnml_vec_acc_f32 (const int n, float * y, const float * x)               { for (int i = 0; i < n; ++i) y[i] += x[i]; }
 void nnml_vec_max_f32(const int n, float * s, const float * x);
 void nnml_vec_add_f32(float * dst, const float ** srcs, int n_srcs, size_t n);
-void nnml_vec_add_f16(__fp16 * dst, const __fp16 ** srcs, int n_srcs, size_t n);
+void nnml_vec_add_f16(nnml_fp16_t * dst, const nnml_fp16_t ** srcs, int n_srcs, size_t n);
 
 
 // type conversion table

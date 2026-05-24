@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <arm_neon.h>
-#include <unistd.h>
 
 #include "ops.h"
 #include "tensor.h"
@@ -1936,10 +1935,10 @@ static inline nnml_float nnml_vec_soft_max_f32(const int n, float * y, const flo
     const int vlen = svcntw();
     for (; i < n; i += vlen) {
         const svbool_t pg = svwhilelt_b32_s32(i, n);
-        svfloat32_t val = ggml_v_expf(pg, svsub_f32_x(pg, svld1_f32(pg, x + i),
+        svfloat32_t val = nnml_v_expf(pg, svsub_f32_x(pg, svld1_f32(pg, x + i),
                                                 svdup_n_f32_x(pg, max)));
         svst1_f32(pg, y + i, val);
-        sum += (ggml_float)svaddv_f32(pg, val);
+        sum += (nnml_float)svaddv_f32(pg, val);
     }
 #elif defined(__ARM_NEON) && defined(__aarch64__)
     for (; i + 3 < n; i += 4) {
@@ -2450,28 +2449,30 @@ void nnml_vec_add_f32(float * dst, const float ** srcs, int n_srcs, size_t n) {
     }
 }
 
-void nnml_vec_add_f16(__fp16 * dst, const __fp16 ** srcs, int n_srcs, size_t n) {
+void nnml_vec_add_f16(nnml_fp16_t * dst, const nnml_fp16_t ** srcs, int n_srcs, size_t n) {
+    float16_t * dst_f16 = reinterpret_cast<float16_t *>(dst);
+    const float16_t * const * srcs_f16 = reinterpret_cast<const float16_t * const *>(srcs);
 #if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
     size_t i = 0;
     for (; i <= n - 8; i += 8) {
-        float16x8_t v_acc = vld1q_f16(srcs[0] + i); // 每次处理 8 个 f16
+        float16x8_t v_acc = vld1q_f16(srcs_f16[0] + i);
         for (int j = 1; j < n_srcs; ++j) {
-            float16x8_t v_src = vld1q_f16(srcs[j] + i);
+            float16x8_t v_src = vld1q_f16(srcs_f16[j] + i);
             v_acc = vaddq_f16(v_acc, v_src);
         }
-        vst1q_f16(dst + i, v_acc);
+        vst1q_f16(dst_f16 + i, v_acc);
     }
     for (; i < n; ++i) {
-        __fp16 sum = srcs[0][i];
-        for (int j = 1; j < n_srcs; ++j) sum += srcs[j][i];
-        dst[i] = sum;
+        float16_t sum = srcs_f16[0][i];
+        for (int j = 1; j < n_srcs; ++j) sum += srcs_f16[j][i];
+        dst_f16[i] = sum;
     }
 #else
     // generic implementation
     for (size_t i = 0; i < n; ++i) {
-        float sum = (float)srcs[0][i];
-        for (int j = 1; j < n_srcs; ++j) sum += (float)srcs[j][i];
-        dst[i] = (__fp16)sum;
+        float16_t sum = srcs_f16[0][i];
+        for (int j = 1; j < n_srcs; ++j) sum += srcs_f16[j][i];
+        dst_f16[i] = sum;
     }
 #endif
 }

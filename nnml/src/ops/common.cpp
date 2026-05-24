@@ -236,7 +236,7 @@ void forward_mul_mat_generic(nnml_tensor * node, const nnml_compute_state * para
         if ((nr0 % 2 != 0) || (ne11 % 2 != 0) || ((ir0_end - ir0_start) % 2 != 0) || ((ir1_end - ir1_start) % 2 != 0)) {
             num_rows_per_vec_dot = 1;
         }
-        
+
         nnml_compute_forward_mul_mat_one_chunk(params, node, src0->get_data_type(), num_rows_per_vec_dot, ir0_start, ir0_end, ir1_start, ir1_end);
 
         if (nth >= nchunk0 * nchunk1) {

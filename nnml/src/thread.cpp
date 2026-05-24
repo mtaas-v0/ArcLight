@@ -8,8 +8,12 @@
  */
 #include <cerrno>
 #include <thread>
-#include <unistd.h>
 #include <map>
+#include <algorithm>
+
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 
 #if defined(NNML_USE_OPENMP)
 #include <omp.h>
@@ -19,36 +23,6 @@
 
 
 int boot_node_id = -1;
-
-#if defined(_WIN32) && defined(_MSC_VER) && !defined(__clang__)
-void atomic_store(atomic_int *ptr, LONG val) {
-    InterlockedExchange(ptr, val);
-}
-void atomic_store_explicit(atomic_int *ptr, LONG val, memory_order) {
-    InterlockedExchange(ptr, val);
-}
-LONG atomic_load(atomic_int *ptr) {
-    return InterlockedCompareExchange(ptr, 0, 0);
-}
-LONG atomic_load_explicit(atomic_int *ptr, memory_order) {
-    return InterlockedCompareExchange(ptr, 0, 0);
-}
-LONG atomic_fetch_add(atomic_int *ptr, LONG inc) {
-    return InterlockedExchangeAdd(ptr, inc);
-}
-LONG atomic_fetch_add_explicit(atomic_int *ptr, LONG inc, memory_order) {
-    return InterlockedExchangeAdd(ptr, inc);
-}
-atomic_bool atomic_flag_test_and_set(atomic_flag *ptr) {
-    return InterlockedExchange(ptr, 1);
-}
-void atomic_flag_clear(atomic_flag *ptr) {
-    InterlockedExchange(ptr, 0);
-}
-void atomic_thread_fence(memory_order) {
-    MemoryBarrier();
-}
-#endif
 
 
 // implementation of nnml_threadgroup
@@ -278,7 +252,7 @@ int nnml_active_threads(const nnml_threadpool *pool) {
     return active;
 }
 
-static int nnml_set_affinity_platform(pthread_t th, int cpu_id) {
+static int nnml_set_affinity_platform(nnml_thread_t th, int cpu_id) {
 #if defined(__linux__)
     if (cpu_id < 0) return EINVAL;
     cpu_set_t cpuset;
@@ -309,6 +283,7 @@ static int nnml_set_affinity_platform(pthread_t th, int cpu_id) {
 int nnml_get_boot_node_id() {
     if (boot_node_id != -1) return boot_node_id;
 
+#if defined(__linux__) && NNML_HAS_NUMA
     int local_var = 0;
     int local_node_idx = -1;
     if (get_mempolicy(&local_node_idx, NULL, 0, &local_var, MPOL_F_ADDR | MPOL_F_NODE) == 0) {
@@ -316,6 +291,7 @@ int nnml_get_boot_node_id() {
         return local_node_idx;
     }
     fprintf(stderr, "Warning: cannot determine local NUMA node.\n");
+#endif
     return -1;
 }
 
@@ -568,8 +544,8 @@ NNML_API int nnml_threadpool_bind_affinity(nnml_threadpool *pool, nnml_affinity_
         for (int i = 0; i < topo.cpu_count; ++i) all_cpus.push_back(i);
     }
 
-    std::vector<pthread_t> threads;
-    std::map<pthread_t, nnml_compute_state*> thread_state_map;
+    std::vector<nnml_thread_t> threads;
+    std::map<nnml_thread_t, nnml_compute_state*> thread_state_map;
     threads.reserve(pool->total_threads);
     for (auto *grp : pool->groups)
         for (int i = 0; i < grp->n_threads_max; ++i) {

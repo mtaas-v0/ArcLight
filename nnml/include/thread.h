@@ -11,7 +11,6 @@
  * Designed for inference workloads requiring high parallelism and NUMA locality control.
  */
 #pragma once
-#include <pthread.h>
 #include <atomic>
 #include <vector>
 #include <cstring>
@@ -59,40 +58,95 @@ inline void nnml_thread_cpu_relax() {}
 #endif
 
 #if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <process.h>
 
-#if defined(_MSC_VER) && !defined(__clang__)
-#define GGML_CACHE_ALIGN __declspec(align(NNML_CACHE_LINE))
-typedef volatile LONG atomic_int;
-typedef atomic_int    atomic_bool;
-typedef atomic_int    atomic_flag;
-#define ATOMIC_FLAG_INIT 0
-typedef enum {
-    memory_order_relaxed,
-    memory_order_consume,
-    memory_order_acquire,
-    memory_order_release,
-    memory_order_acq_rel,
-    memory_order_seq_cst
-} memory_order;
-void atomic_store(atomic_int *ptr, LONG val);
-void atomic_store_explicit(atomic_int *ptr, LONG val, memory_order mo);
-LONG atomic_load(atomic_int *ptr);
-LONG atomic_load_explicit(atomic_int *ptr, memory_order mo);
-LONG atomic_fetch_add(atomic_int *ptr, LONG inc);
-LONG atomic_fetch_add_explicit(atomic_int *ptr, LONG inc, memory_order mo);
-atomic_bool atomic_flag_test_and_set(atomic_flag *ptr);
-void atomic_flag_clear(atomic_flag *ptr);
-void atomic_thread_fence(memory_order mo);
+typedef CONDITION_VARIABLE nnml_win32_cond_t;
+typedef CRITICAL_SECTION   nnml_win32_mutex_t;
+typedef HANDLE             nnml_win32_thread_t;
+
+struct nnml_win32_thread_start {
+    void * (*fn)(void *);
+    void * arg;
+};
+
+static inline unsigned __stdcall nnml_win32_thread_trampoline(void * arg) {
+    auto * start = static_cast<nnml_win32_thread_start *>(arg);
+    void * (*fn)(void *) = start->fn;
+    void * fn_arg = start->arg;
+    delete start;
+    fn(fn_arg);
+    return 0;
+}
+
+static inline int pthread_mutex_init(nnml_win32_mutex_t * mutex, const void *) {
+    InitializeCriticalSection(mutex);
+    return 0;
+}
+
+static inline int pthread_mutex_destroy(nnml_win32_mutex_t * mutex) {
+    DeleteCriticalSection(mutex);
+    return 0;
+}
+
+static inline int pthread_mutex_lock(nnml_win32_mutex_t * mutex) {
+    EnterCriticalSection(mutex);
+    return 0;
+}
+
+static inline int pthread_mutex_unlock(nnml_win32_mutex_t * mutex) {
+    LeaveCriticalSection(mutex);
+    return 0;
+}
+
+static inline int pthread_cond_init(nnml_win32_cond_t * cond, const void *) {
+    InitializeConditionVariable(cond);
+    return 0;
+}
+
+static inline int pthread_cond_destroy(nnml_win32_cond_t *) {
+    return 0;
+}
+
+static inline int pthread_cond_wait(nnml_win32_cond_t * cond, nnml_win32_mutex_t * mutex) {
+    return SleepConditionVariableCS(cond, mutex, INFINITE) ? 0 : (int)GetLastError();
+}
+
+static inline int pthread_cond_broadcast(nnml_win32_cond_t * cond) {
+    WakeAllConditionVariable(cond);
+    return 0;
+}
+
+static inline int pthread_create(nnml_win32_thread_t * thread, const void *, void * (*fn)(void *), void * arg) {
+    auto * start = new nnml_win32_thread_start{fn, arg};
+    uintptr_t handle = _beginthreadex(nullptr, 0, nnml_win32_thread_trampoline, start, 0, nullptr);
+    if (handle == 0) {
+        delete start;
+        return (int)GetLastError();
+    }
+    *thread = reinterpret_cast<HANDLE>(handle);
+    return 0;
+}
+
+static inline int pthread_join(nnml_win32_thread_t thread, void **) {
+    if (!thread) return 0;
+    DWORD wait_result = WaitForSingleObject(thread, INFINITE);
+    CloseHandle(thread);
+    return wait_result == WAIT_OBJECT_0 ? 0 : (int)GetLastError();
+}
+
+static inline nnml_win32_thread_t pthread_self() {
+    return GetCurrentThread();
+}
 #else
 #include <atomic>
-#endif
-#else
-#include <atomic>
+#include <pthread.h>
 #endif
 
 #if defined(__APPLE__)
@@ -101,9 +155,15 @@ void atomic_thread_fence(memory_order mo);
 #endif
 
 
-typedef pthread_cond_t  nnml_cond_t;
-typedef pthread_mutex_t nnml_mutex_t;
-typedef pthread_t       nnml_thread_t;
+#if defined(_WIN32)
+typedef nnml_win32_cond_t   nnml_cond_t;
+typedef nnml_win32_mutex_t  nnml_mutex_t;
+typedef nnml_win32_thread_t nnml_thread_t;
+#else
+typedef pthread_cond_t      nnml_cond_t;
+typedef pthread_mutex_t     nnml_mutex_t;
+typedef pthread_t           nnml_thread_t;
+#endif
 
 enum nnml_status {                      // thread pool status codes
     NNML_STATUS_ALLOC_FAILED = -2,
@@ -249,7 +309,7 @@ void       nnml_barrier(struct nnml_threadgroup *tp);
 void       nnml_barrier_global(struct nnml_threadpool *pool);
 
 int        nnml_active_threads(const nnml_threadpool *pool);
-static int nnml_set_affinity_platform(pthread_t th, int cpu_id);
+static int nnml_set_affinity_platform(nnml_thread_t th, int cpu_id);
 // static int nnml_get_affinity_platform(pthread_t th);
 
 extern int boot_node_id;

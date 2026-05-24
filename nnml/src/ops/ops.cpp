@@ -1,11 +1,14 @@
 #include <cassert>
 #include <algorithm>
 #include <float.h>
+#include <vector>
 
 #include "ops.h"
 #include "tensor.h"
-#include "unistd.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // branches of get_rows
 
@@ -124,6 +127,8 @@ static void nnml_compute_forward_get_rows_f32(nnml_tensor * node, const nnml_com
 
         NNML_ASSERT(i01 >= 0 && i01 < ne01);
 
+        // src0->save_data("/home/modelbest/llama.cpp/attn_out_bk.bin");
+        // printf("%lld %d %d %d %d %d %d %d %d %d %d\n", nc, i10, i01, i11, i12, nb1, nb2, nb3, nb01, nb02, nb03);
         nnml_vec_cpy_f32(nc,
                 (float *) ((char *) node->tensor_data() + i10*nb1  + i11*nb2  + i12*nb3),
                 (float *) ((char *) src0->tensor_data() + i01*nb01 + i11*nb02 + i12*nb03));
@@ -1490,19 +1495,19 @@ void nnml_compute_forward_gather(nnml_tensor * node, nnml_compute_state * params
     if (thread_n <= 0) NNML_ABORT("fatal error: thread_n <= 0.");
 
     if (type == NNML_TYPE_F32) {
-        const float * local_srcs[n_srcs];
+        std::vector<const float *> local_srcs(n_srcs);
         for (int i = 0; i < n_srcs; ++i) {
             local_srcs[i] = (const float *)node->get_src_tensor(i)->tensor_data() + ir0;
         }
         float * local_dst = (float *)dst_data + ir0;
-        nnml_vec_add_f32((float*)local_dst, (const float**)local_srcs, n_srcs, thread_n);
+        nnml_vec_add_f32((float*)local_dst, local_srcs.data(), n_srcs, thread_n);
     } else if (type == NNML_TYPE_F16) {
-        const __fp16 * local_srcs[n_srcs];
+        std::vector<const nnml_fp16_t *> local_srcs(n_srcs);
         for (int i = 0; i < n_srcs; ++i) {
-            local_srcs[i] = (const __fp16 *)node->get_src_tensor(i)->tensor_data() + ir0;
+            local_srcs[i] = (const nnml_fp16_t *)node->get_src_tensor(i)->tensor_data() + ir0;
         }
-        __fp16 * local_dst = (__fp16 *)dst_data + ir0;
-        nnml_vec_add_f16((__fp16*)local_dst, (const __fp16**)local_srcs, n_srcs, thread_n);
+        nnml_fp16_t * local_dst = (nnml_fp16_t *)dst_data + ir0;
+        nnml_vec_add_f16((nnml_fp16_t*)local_dst, local_srcs.data(), n_srcs, thread_n);
     } else {
         NNML_ABORT("fatal error: unsupported data type %d (%s) in gather operation.", type, nnml_type_name(type));
     }

@@ -20,7 +20,10 @@
 #include <string>
 #include <cstring>
 #include <type_traits>
+
+#if !defined(_WIN32)
 #include <unistd.h>
+#endif
 
 #include "nnml.h"
 #include "tensor.h"

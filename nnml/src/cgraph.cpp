@@ -6,21 +6,24 @@
  * and the llm_kv_cache class which manages the key-value cache for attention mechanism.
  */
 #include <algorithm>
+#include <chrono>
+#if !defined(_WIN32)
 #include <time.h>
+#endif
 
 #include "cgraph.h"
 
 
 NNML_API int64_t nnml_time_us(void) {
+#if defined(_WIN32)
+    const auto now = std::chrono::steady_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::microseconds>(now).count();
+#else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (int64_t)ts.tv_sec*1000000 + (int64_t)ts.tv_nsec/1000;
+#endif
 }
-
-
-// model register
-std::unordered_map<std::string, std::function<void(nnml_cgraph &, void *, bool)>> nnml_cgraph::registry;
-
 
 // implementation of nnml_cgraph
 nnml_cgraph::nnml_cgraph(
@@ -35,7 +38,7 @@ nnml_cgraph::nnml_cgraph(
     if (!is_tp) NNML_ASSERT(n_sub_graphs == 1);
     // std::printf("nnml_cgraph: n_sub_graphs=%d\n", n_sub_graphs);
 
-    n_cnode_array = static_cast<int32_t>(n_weight_tensors * (6 + n_sub_graphs));
+    n_cnode_array = static_cast<int32_t>(n_weight_tensors * (12 + n_sub_graphs));
     nodes = new nnml_cgraph_cnode[n_cnode_array];
 }
 
@@ -288,7 +291,7 @@ nnml_tensor * nnml_cgraph::build_attn_mha(nnml_tensor * q, nnml_tensor * k, nnml
             cur->set_name("%s-%d", "fattn_mla", il);
             build_forward_expand(cur);
             cur = nnml_permute(mem, NNML_TENSOR_TYPE_ACTIVATION, 0, 0, cur, 0, 2, 1, 3);
-            cur = nnml_cont(mem, NNML_TENSOR_TYPE_ACTIVATION, 0, 0, cur); // Needed because ggml_reshape_2d expects contiguous inputs.
+            cur = nnml_cont(mem, NNML_TENSOR_TYPE_ACTIVATION, 0, 0, cur); // Needed because nnml_reshape_2d expects contiguous inputs.
             build_forward_expand(cur);
         }
         cur = nnml_reshape_2d(mem, NNML_TENSOR_TYPE_ACTIVATION, 0, 0, cur, cur->get_elements(0)*cur->get_elements(1), cur->get_elements(2)*cur->get_elements(3));
@@ -407,7 +410,7 @@ nnml_tensor_ptrs nnml_cgraph::build_attn_mha(nnml_tensor_ptrs q, nnml_tensor_ptr
             build_forward_expand(cur);
             for (int i = 0; i < n_para_graphs; ++i) {
                 cur[i] = nnml_permute(mem, NNML_TENSOR_TYPE_ACTIVATION, i, 0, cur[i], 0, 2, 1, 3);
-                cur[i] = nnml_cont(mem, NNML_TENSOR_TYPE_ACTIVATION, i, 0, cur[i]); // Needed because ggml_reshape_2d expects contiguous inputs.
+                cur[i] = nnml_cont(mem, NNML_TENSOR_TYPE_ACTIVATION, i, 0, cur[i]); // Needed because nnml_reshape_2d expects contiguous inputs.
             }
             build_forward_expand(cur);
         }
