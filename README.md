@@ -112,6 +112,20 @@ ArcLight is a project that we aim to maintain and improve over the long term. We
 
 ----
 
+## 📝 Citation
+
+If you use ArcLight in your research, please cite our work:
+
+```bibtex
+@inproceedings{xu2025arclight,
+  title={ArcLight: A Lightweight LLM Inference Architecture for Many-Core CPUs},
+  author={Xu, Yuzhuang and Han, Xu and Li, Yuxuan and Che, Wanxiang},
+  booktitle={Proceedings of the Annual Meeting of the Association for Computational Linguistics: System Demonstration},
+  year={2026},
+  url={https://arxiv.org/pdf/2603.07770}
+}
+```
+
 ## 🤗 Acknowledgement
 
 We draw lots of design inspiration from the popular framework [llama.cpp](https://github.com/ggml-org/llama.cpp). In addition, our v1.0 release almost fully transplants its operator library and KV cache management approach. We would like to express our heartfelt thanks to the initiators and contributors of that project!
