@@ -117,7 +117,7 @@ ArcLight is a project that we aim to maintain and improve over the long term. We
 If you use ArcLight in your research, please cite our work:
 
 ```bibtex
-@inproceedings{xu2025arclight,
+@inproceedings{xu2026arclight,
   title={ArcLight: A Lightweight LLM Inference Architecture for Many-Core CPUs},
   author={Xu, Yuzhuang and Han, Xu and Li, Yuxuan and Che, Wanxiang},
   booktitle={Proceedings of the Annual Meeting of the Association for Computational Linguistics: System Demonstration},
