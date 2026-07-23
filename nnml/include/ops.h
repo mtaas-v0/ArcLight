@@ -18,6 +18,11 @@
 #include "nnml.h"
 #include "thread.h"
 
+#if defined(_MSC_VER)
+    // MSVC uses std::float16_t (C++23) or custom wrappers like DirectX::PackedVector::HALF
+    #include <stdfloat>
+    typedef std::float16_t __fp16; 
+#endif
 
 #define GROUP_MAX_EPS 1e-15f
 
