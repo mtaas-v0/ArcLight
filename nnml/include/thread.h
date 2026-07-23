@@ -148,10 +148,12 @@ static inline int pthread_join(nnml_win32_thread_t thread, void **) {
     return wait_result == WAIT_OBJECT_0 ? 0 : (int)GetLastError();
 }
 
-                                     
+#if !IS_GCC
 static inline nnml_win32_thread_t pthread_self() {
     return GetCurrentThread();
 }
+#endif
+                                     
 #else
 #include <atomic>
 #include <pthread.h>
