@@ -43,8 +43,8 @@ jobs:
           - c_compiler: clang
             cpp_compiler: clang++
           - os: windows-11-arm
-            c_compiler: aarch64-w64-mingw32-gcc 
-            cpp_compiler: aarch64-w64-mingw32-g++
+            c_compiler: mingw-w64-cross-mingwarm64-gcc
+            cpp_compiler: mingw-w64-cross-mingwarm64-g++
 #          - os: ubuntu-latest
 #            c_compiler: gcc
 #            cpp_compiler: g++
@@ -82,7 +82,7 @@ jobs:
           mingw-w64-x86_64-ninja
            
     - name: Set up MSYS2 and GCC (CROSS-COMPILE)
-      if: matrix.c_compiler == 'aarch64-w64-mingw32-gcc'
+      if: matrix.c_compiler == 'mingw-w64-cross-mingwarm64-gcc'
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
