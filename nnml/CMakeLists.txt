@@ -13,6 +13,13 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "Android")
     add_compile_definitions(_GNU_SOURCE)
 endif()
 
+
+# Conditionally apply the duplicate symbol workaround
+message(STATUS "Windows ARM64 GCC detected: Enabling duplicate symbol linker workaround.")
+add_link_options("-Wl,--allow-multiple-definition")
+
+
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB SRC_FILES
     src/*.c
