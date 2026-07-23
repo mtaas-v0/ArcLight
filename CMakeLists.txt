@@ -8,6 +8,16 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
+
+# 1. Force static compilation for internal dependencies
+set(BUILD_SHARED_LIBS OFF)
+
+# 2. Force the MinGW compiler to bake runtimes into the final .exe
+if(WIN32 AND NOT MSVC)
+    add_link_options("-static-libgcc" "-static-libstdc++" "-static")
+endif()
+
+
 if(WIN32)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
