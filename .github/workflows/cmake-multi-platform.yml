@@ -94,6 +94,7 @@ jobs:
           mingw-w64-x86_64-ninja
           mingw-w64-cross-mingwarm64-binutils
           mingw-w64-cross-mingwarm64-gcc
+          mpc
            
 
     - name: Configure CMake, default generator
