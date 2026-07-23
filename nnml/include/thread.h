@@ -148,7 +148,7 @@ static inline int pthread_join(nnml_win32_thread_t thread, void **) {
     return wait_result == WAIT_OBJECT_0 ? 0 : (int)GetLastError();
 }
 
-#if !IS_GCC
+#if !IS_GCC || defined(__MINGW64__) 
 static inline nnml_win32_thread_t pthread_self() {
     return GetCurrentThread();
 }
