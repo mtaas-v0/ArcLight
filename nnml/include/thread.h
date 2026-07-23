@@ -64,7 +64,7 @@ inline void nnml_thread_cpu_relax() {}
     #define IS_GCC 0
 #endif
                                      
-#if defined(_WIN32) && !IS_GCC 
+#if defined(_WIN32) 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -148,6 +148,7 @@ static inline int pthread_join(nnml_win32_thread_t thread, void **) {
     return wait_result == WAIT_OBJECT_0 ? 0 : (int)GetLastError();
 }
 
+                                     
 static inline nnml_win32_thread_t pthread_self() {
     return GetCurrentThread();
 }
