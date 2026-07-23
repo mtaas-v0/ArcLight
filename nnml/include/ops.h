@@ -18,7 +18,7 @@
 #include "nnml.h"
 #include "thread.h"
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
     // MSVC uses std::float16_t (C++23) or custom wrappers like DirectX::PackedVector::HALF
     #include <stdfloat>
     typedef std::float16_t __fp16; 
