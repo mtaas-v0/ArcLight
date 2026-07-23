@@ -15,6 +15,10 @@ set(BUILD_SHARED_LIBS OFF)
 # 2. Force the MinGW compiler to bake runtimes into the final .exe
 if(WIN32 AND NOT MSVC)
     add_link_options("-static-libgcc" "-static-libstdc++" "-static")
+    if(WIN32 AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        message(STATUS "Windows ARM64 GCC detected: Enabling duplicate symbol linker workaround.")
+    target_link_options(my_project PRIVATE "-Wl,--allow-multiple-definition")
+    endif()
 endif()
 
 
