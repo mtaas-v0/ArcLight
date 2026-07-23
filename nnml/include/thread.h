@@ -57,7 +57,14 @@ inline void nnml_thread_cpu_relax() { _mm_pause(); }
 inline void nnml_thread_cpu_relax() {}
 #endif
 
-#if defined(_WIN32)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
+    // This code block runs ONLY on a genuine GCC compiler
+    #define IS_GCC 1
+#else
+    #define IS_GCC 0
+#endif
+                                     
+#if defined(_WIN32) && !IS_GCC 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
