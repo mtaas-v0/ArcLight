@@ -80,6 +80,7 @@ jobs:
 
 
     - name: Configure CMake, default generator
+      if: false
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
@@ -91,7 +92,7 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Configure CMake, Ninja generator
-      if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm' ) && ( matrix.c_compiler == 'gcc' || matrix.c_compiler == 'clang')
+#      if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm' ) && ( matrix.c_compiler == 'gcc' || matrix.c_compiler == 'clang')
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
