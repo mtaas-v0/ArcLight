@@ -133,7 +133,7 @@ jobs:
         -DCMAKE_C_COMPILER=/opt/bin/aarch64-w64-mingw32-gcc.exe
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DARCLIGHT_BACKEND=NEON -DNNML_USE_NUMA=OFF
-        -DCMAKE_C_FLAGS="-DPTHREAD_USE_WIN_SELF"
+        -DPTHREAD_USE_WIN_SELF=ON
         -S .
 
 
