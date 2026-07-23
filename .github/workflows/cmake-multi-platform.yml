@@ -54,7 +54,6 @@ jobs:
         exclude:
           - os: windows-11-arm
             c_compiler: gcc
-            cpp_compiler: g++
 #          - os: windows-latest
 #            c_compiler: clang
 #          - os: ubuntu-latest
