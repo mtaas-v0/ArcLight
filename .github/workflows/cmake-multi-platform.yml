@@ -145,7 +145,7 @@ jobs:
       if: matrix.c_compiler == 'mingw-w64-cross-mingwarm64-gcc'
       shell: msys2 {0}
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      run: cmake --build build --config ${{ matrix.build_type }}
 
     
 
@@ -160,7 +160,16 @@ jobs:
     
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
+      if: matrix.c_compiler != 'mingw-w64-cross-mingwarm64-gcc'
       with:
         # Dynamically names the artifact zip, e.g., "production-build-42"
         name: nightly-build-${{ github.run_number }}-${{ matrix.os }}-${{ matrix.c_compiler }}
         path: ${{ steps.strings.outputs.build-output-dir }}/
+        
+    - name: Upload Build Artifact | MSYS2
+      uses: actions/upload-artifact@v4
+      if: matrix.c_compiler == 'mingw-w64-cross-mingwarm64-gcc'
+      with:
+        # Dynamically names the artifact zip, e.g., "production-build-42"
+        name: nightly-build-${{ github.run_number }}-${{ matrix.os }}-${{ matrix.c_compiler }}
+        path: build/
