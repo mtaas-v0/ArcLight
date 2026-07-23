@@ -18,7 +18,11 @@ endif()
 message(STATUS "Windows ARM64 GCC detected: Enabling duplicate symbol linker workaround.")
 add_link_options("-Wl,--allow-multiple-definition")
 
-
+if(PTHREAD_USE_WIN_SELF)
+    message(STATUS "Enabling PTHREAD_USE_WIN_SELF!")
+    # This macro definition will only apply to targets inside this folder
+    add_compile_definitions(PTHREAD_USE_WIN_SELF=1)
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB SRC_FILES
