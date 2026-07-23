@@ -125,13 +125,13 @@ jobs:
       shell: msys2 {0}
       if: matrix.c_compiler == 'mingw-w64-cross-mingwarm64-gcc'
       run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}    
+        cmake -B build
         -G "Ninja"
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DARCLIGHT_BACKEND=AUTO -DNNML_USE_NUMA=ON
-        -S ${{ github.workspace }}
+        -S .
 
 
     - name: Build
