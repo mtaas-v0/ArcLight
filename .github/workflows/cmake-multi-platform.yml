@@ -94,7 +94,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DARCLIGHT_BACKEND=AUTO -DNNML_USE_NUMA=ON
+        -DARCLIGHT_BACKEND=NONE -DNNML_USE_NUMA=OFF
         -S ${{ github.workspace }}
 
     - name: Configure CMake, Ninja generator
