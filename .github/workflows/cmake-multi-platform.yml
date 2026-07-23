@@ -42,6 +42,9 @@ jobs:
             cpp_compiler: g++
           - c_compiler: clang
             cpp_compiler: clang++
+          - os: windows-11-arm
+            c_compiler: aarch64-w64-mingw32-gcc 
+            cpp_compiler: aarch64-w64-mingw32-g++
 #          - os: ubuntu-latest
 #            c_compiler: gcc
 #            cpp_compiler: g++
@@ -68,7 +71,7 @@ jobs:
 
     
     - name: Set up MSYS2 and GCC
-      if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm' ) && matrix.c_compiler == 'gcc'
+      if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && matrix.c_compiler == 'gcc'
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
@@ -77,6 +80,9 @@ jobs:
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-ninja
+          mingw-w64-cross-mingwarm64-binutils
+          mingw-w64-cross-mingwarm64-gcc
+           
 
 
     - name: Configure CMake, default generator
