@@ -367,8 +367,11 @@ NNML_API nnml_threadpool * nnml_threadpool_new(int n_groups,
         }
     }
     pool->groups[0]->workers[0].threadgrp = pool->groups[0]; // main thread worker0 points to the correct threadgroup
+    #if IS_GCC
+    pool->groups[0]->workers[0].thrd = (nnml_thread_t)pthread_self();
+    #else
     pool->groups[0]->workers[0].thrd = pthread_self();
-    
+    #endif
     if(nnml_threadpool_bind_affinity(pool, affinity_mode) != 0) {
         fprintf(stderr, "Warning: Failed to bind threadpool affinity (mode=%d)\n", (int)affinity_mode);
     }
